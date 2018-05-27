@@ -1,0 +1,11 @@
+<launch>
+ <!--
+<node pkg="robot_slam" name="motorp" type="motorp.py" required="true" />
+-->
+  <node pkg="robot_slam" name="motors" type="motors.py" required="true" />
+<!--
+  <node pkg="urg_node" name="urg_node" type="urg_node" required="true" >
+        <param name="frame_id" value="base_link"/>
+  </node> 
+-->
+</launch>
