@@ -3,12 +3,17 @@ import os
 import rospy
 from std_msgs.msg import String
 import RPi.GPIO as GPIO
-
+#implementam si encoder ul tot aici
+#nr de gauri pe encoder este = 20
+#diametrul rotii este = 6.4 cm
+#pe 20 de roatatii avem 20 de cm
+#deci 1 cm pe gaura encoder
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(7,GPIO.OUT)
 GPIO.setup(11,GPIO.OUT)
 GPIO.setup(13,GPIO.OUT)
 GPIO.setup(15,GPIO.OUT)
+GPIO.setup(8,GPIO.IN)
 
 def set(property, value):
     try:
@@ -49,7 +54,16 @@ def turnLeft():
     GPIO.output(15,False)
     print "turn left"
 
-def stop():
+def EncoderMeasure():
+    cm=0;
+    oldValue=newValue=False    
+    end=start= time.time()
+    while end - start < 0.5:
+        end= time.time()
+        newValue = GPIO.input(8)
+        if newValue==True and oldValue==False :
+            cm+=1
+        oldValue=newValue
     GPIO.output(7,False)
     GPIO.output(11,False)
     GPIO.output(13,False)
@@ -64,8 +78,8 @@ def callback(msg):
         turnRight()
     elif char == "A":
         turnLeft()
-    time.sleep(0.5)
-    stop()
+    cm = EncoderMeasure()
+    print cm
     #speed is a vlue between 0 and 99 that's what PWM library expects
     #set("duty", str(speed))
 
