@@ -23,9 +23,8 @@ GPIO.setup(15,GPIO.OUT)
 GPIO.setup(40,GPIO.IN)
 
 class Motor():
-    def __init__(self):
-        if not self.set_power(False): sys.exit(1)
-        sub = rospy.Subscriber('direction', String, callback)
+    def __init__(self):        
+        sub = rospy.Subscriber('direction', String, self.callback)
         
         
         #setup pwm
@@ -74,29 +73,29 @@ class Motor():
         self.last_time = self.cur_time
 
     def forward(self):    
-        ss.stop()
-        sd.stop()
-        fs.start(speed)
-        fd.start(speed)
+        self.ss.stop()
+        self.sd.stop()
+        self.fs.start(self.speed)
+        self.fd.start(self.speed)
         print "move forward"
 
     def backwards(self):
-        ss.start(speed)
-        sd.start(speed)
-        fs.stop()
-        fd.stop()
+        self.ss.start(self.speed)
+        self.sd.start(self.speed)
+        self.fs.stop()
+        self.fd.stop()
         print "move backwards"
     def turnRight(self):
-        ss.stop()
-        sd.start(turnspeed)
-        fs.start(turnspeed)
-        fd.stop()
+        self.ss.stop()
+        self.sd.start(self.turnspeed)
+        self.fs.start(self.turnspeed)
+        self.fd.stop()
         print "turn right"
     def turnLeft(self):    
-        ss.start(turnspeed)
-        sd.stop()
-        fs.stop()
-        fd.start(turnspeed)
+        self.ss.start(self.turnspeed)
+        self.sd.stop()
+        self.fs.stop()
+        self.fd.start(self.turnspeed)
         print "turn left"
 
     def EncoderMeasure(self,command):
@@ -109,10 +108,10 @@ class Motor():
             if newValue!=oldValue :
                 cm+=0.5
             oldValue=newValue        
-        ss.stop()
-        sd.stop()
-        fs.stop()
-        fd.stop()
+        self.ss.stop()
+        self.sd.stop()
+        self.fs.stop()
+        self.fd.stop()
         if command=="W":
             self.vx+= cm*0.001
         elif command == "S":
@@ -123,19 +122,19 @@ class Motor():
             self.vth+=3.14/4
         return cm
 
-    def callback(msg):    
+    def callback(self,msg):    
         if msg.data=="W":
-            forward()
+            self.forward()
         elif msg.data == "S":
-            backwards()
+            self.backwards()
         elif msg.data == "D":
-            turnRight()
+            self.turnRight()
         elif msg.data == "A":
-            turnLeft()
+            self.turnLeft()
         elif msg.data == "Q":
             GPIO.cleanup()
             sys.exit()
-        cm = EncoderMeasure(msg.data)
+        cm = self.EncoderMeasure(msg.data)
         print cm
 
   
