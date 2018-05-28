@@ -17,7 +17,11 @@ while not rospy.is_shutdown():		# The function will return True if the node is r
     # This node publishes the input data on the topic "rotation"
     rate = rospy.Rate(1)
     print 'Input:'
-    data = chr(screen.getch())
+    try:
+        data = chr(screen.getch())
+    except:
+        data= 'y'
+        print('Invalid input')
     data = data.upper()
     print data
    

@@ -13,7 +13,7 @@ import sys
 #pe 20 de roatatii avem 20 de cm
 #deci 1 cm pe gaura encoder
 #rezolutia encoder ului este de ~0.5 cm
-time.sleep(5)
+
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(7,GPIO.OUT)
 GPIO.setup(11,GPIO.OUT)
@@ -21,43 +21,37 @@ GPIO.setup(13,GPIO.OUT)
 GPIO.setup(15,GPIO.OUT)
 GPIO.setup(40,GPIO.IN)
 
-def set(property, value):
-    try:
-        f = open("/sys/class/pwm/" + property, 'w')
-        f.write(value)
-        f.close()   
-    except:
-        print("Error writing to: " + property + " value: " + value)
- 
-set("delayed", "0")
-set("mode", "pwm")
-set("frequency", "500")
-set("active", "1")
+#setup pwm
+fs=GPIO.PWM(11,50) #spate dreapta- ok
+fd=GPIO.PWM(15,50) #fata dreapta-ok
+ss=GPIO.PWM(7,50) #spate stanga-ok
+sd=GPIO.PWM(13,50) #fata dreapta-ok
 
 def forward():
-    GPIO.output(7,False)
-    GPIO.output(11,True)
-    GPIO.output(13,False)
-    GPIO.output(15,True)
+    
+    ss.stop()
+    sd.stop()
+    fs.start(60)
+    fd.start(60)
     print "move forward"
 
 def backwards():
-    GPIO.output(7,True)
-    GPIO.output(11,False)
-    GPIO.output(13,True)
-    GPIO.output(15,False)
+    ss.start(60)
+    sd.start(60)
+    fs.stop()
+    fd.stop()
     print "move backwards"
 def turnRight():
-    GPIO.output(7,True)
-    GPIO.output(11,False)
-    GPIO.output(13,False)
-    GPIO.output(15,True)
+    ss.start(60)
+    sd.stop()
+    fs.stop()
+    fd.start(60)
     print "turn right"
 def turnLeft():
-    GPIO.output(7,False)
-    GPIO.output(11,True)
-    GPIO.output(13,True)
-    GPIO.output(15,False)
+    ss.stop()
+    sd.start(60)
+    fs.start(60)
+    fd.stop()
     print "turn left"
 
 def EncoderMeasure():
@@ -70,10 +64,10 @@ def EncoderMeasure():
         if newValue!=oldValue :
             cm+=0.5
         oldValue=newValue        
-    GPIO.output(7,False)
-    GPIO.output(11,False)
-    GPIO.output(13,False)
-    GPIO.output(15,False)
+    ss.stop()
+    sd.stop()
+    fs.stop()
+    fd.stop()
     return cm
 
 def callback(msg):    
