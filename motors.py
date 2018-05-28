@@ -26,39 +26,40 @@ fs=GPIO.PWM(11,50) #spate dreapta- ok
 fd=GPIO.PWM(15,50) #fata dreapta-ok
 ss=GPIO.PWM(7,50) #spate stanga-ok
 sd=GPIO.PWM(13,50) #fata dreapta-ok
-
+speed=30
+turnspeed=12
 def forward():
     
     ss.stop()
     sd.stop()
-    fs.start(60)
-    fd.start(60)
+    fs.start(speed)
+    fd.start(speed)
     print "move forward"
 
 def backwards():
-    ss.start(60)
-    sd.start(60)
+    ss.start(speed)
+    sd.start(speed)
     fs.stop()
     fd.stop()
     print "move backwards"
 def turnRight():
-    ss.start(60)
+    ss.stop()
+    sd.start(turnspeed)
+    fs.start(turnspeed)
+    fd.stop()
+    print "turn right"
+def turnLeft():    
+    ss.start(turnspeed)
     sd.stop()
     fs.stop()
-    fd.start(60)
-    print "turn right"
-def turnLeft():
-    ss.stop()
-    sd.start(60)
-    fs.start(60)
-    fd.stop()
+    fd.start(turnspeed)
     print "turn left"
 
 def EncoderMeasure():
     cm=0;
     oldValue=newValue=GPIO.input(40)    
     end=start= time.time()
-    while end - start < 0.5:
+    while end - start < 1:
         end= time.time()
         newValue = GPIO.input(40)
         if newValue!=oldValue :
