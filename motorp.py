@@ -4,7 +4,7 @@
 import rospy
 import curses
 from std_msgs.msg import String
-
+import time
 screen = curses.initscr()
 curses.noecho() 
 curses.cbreak()
@@ -23,8 +23,8 @@ while not rospy.is_shutdown():		# The function will return True if the node is r
         data= 'y'
         print('Invalid input')
     data = data.upper()
-    print data
-   
+    print data       
     if data in ("W","S","A","D","Q"):
         pub.publish(data)
         rate.sleep()
+    time.sleep(1)

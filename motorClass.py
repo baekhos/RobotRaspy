@@ -33,7 +33,7 @@ class Motor():
         self.ss=GPIO.PWM(7,50) #spate stanga-ok
         self.sd=GPIO.PWM(13,50) #fata dreapta-ok
         self.speed=30
-        self.turnspeed=12
+        self.turnspeed=16
         self.cm =0
         self.pub_odom = rospy.Publisher('odom', Odometry, queue_size=10)
         self.bc_odom = tf.TransformBroadcaster()
@@ -117,10 +117,12 @@ class Motor():
         elif command == "S":
             self.vx-=-cm*0.001
         elif command == "D":
-            self.vth-=3.14/4
+            self.vth-=3.14*(cm/43.5)
         elif command == "A":
-            self.vth+=3.14/4
+            self.vth+=3.14*(cm/38)
         return cm
+    #43.5 si 38 cm au fost calculate apriori si reprezinta distanta citita
+    #de encoder pentru o rotatie de 360 de grade pe roata din dreapta
 
     def callback(self,msg):    
         if msg.data=="W":
