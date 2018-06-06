@@ -97,7 +97,7 @@ class Motor():
     def send_odom(self):
         self.cur_time = rospy.Time.now()
 
-        EncoderMeasure()   
+        CurrentPosition()   
         
         self.x += self.vx * math.cos(self.th) #* dt
         self.y += self.vx * math.sin(self.th) #* dt
@@ -160,17 +160,17 @@ class Motor():
         self.fd.stop()
         print "stop"   
 
-    def EncoderMeasure(self):
-        step=False
-        newValue = GPIO.input(40)
-        if newValue!=self.oldValue :
-            step=True
-        self.oldValue=newValue
-        if step == True:             
+    def CurrentPosition(self):
+        # step=False
+        # newValue = GPIO.input(40)
+        # if newValue!=self.oldValue :
+        #     step=True
+        # self.oldValue=newValue
+        if distanceS() == 1:             
             if self.directive=="W":
-                self.vx+= 0.05
+                self.vx+= 0.005
             elif self.directive == "S":
-                self.vx-= 0.05
+                self.vx-= 0.005
             elif self.directive == "D":
                 self.vth-=0,0357
             elif self.directive == "A":
