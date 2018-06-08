@@ -28,7 +28,7 @@ class Motor():
     def __init__(self):        
         sub = rospy.Subscriber('direction', String, self.callback)
         
-         
+        
         #setup pwm
         self.fs=GPIO.PWM(11,50) #spate dreapta- ok
         self.fd=GPIO.PWM(15,50) #fata dreapta-ok
@@ -45,8 +45,7 @@ class Motor():
         self.readS=GPIO.input(40)
         self.readD=GPIO.input(32)
         self.distS=0
-        self.distD=0
-        self.toggle=True
+        self.distD=0        
         #--------------------------------
         self.speed=12
         self.turnspeed=10
@@ -56,6 +55,7 @@ class Motor():
         self.bc_odom = tf.TransformBroadcaster()
 
         #Coordonate carteziene
+        self.lastpost=time.time()
         self.x, self.y, self.th = 0.0, 0.0, 0.0
         self.vx, self.vth = 0.0, 0.0
         self.actual=False
@@ -93,31 +93,31 @@ class Motor():
             print ("viteza pe roata dreapta este: %d iar pwm-ul e de %d iar pe roata stanga este: %d iar pwm-ul e de %d " % ( speedD,self.vd,speedS,self.vs))
             delta=speedS-speedD
             if self.vd < self.limit and self.vs < self.limit:
-                if delta> 1.5:
+                if delta> 1.5:                    
                     self.vd+=self.vd*(delta/speedD)
-		    if self.vd>self.limit:
-			self.vd=self.limit
+                    if self.vd>self.limit:
+                        self.vd=self.limit                
                 elif delta < -1.5:
+                    
                     delta=abs(delta)
                     self.vs+=self.vs*(delta/speedS)
-		    if self.vs>self.limit:
-			self.vs=self.limit
+                    if self.vs>self.limit:
+                        self.vs=self.limit
             else:                
                 if delta> 1.5:
                     self.vs-=self.vs*(delta/speedS)                    
                 elif delta < -1.5:
                     delta=abs(delta)                
                     self.vd-=self.vd*(delta/speedD)
-            self.distS=self.distD=0.001
-            self.toggle= not self.toggle
+            self.distS=self.distD=0.001            
             self.nt=time.time()
 
 
-    def send_odom(self):
+    def send_odom(self):            
         self.cur_time = rospy.Time.now()
-
-        self.CurrentPosition()   
         
+         
+        currentTime=time.time()
         self.x += self.vx * math.cos(self.th) #* dt
         self.y += self.vx * math.sin(self.th) #* dt
         self.th += self.vth #* dt 
@@ -136,14 +136,10 @@ class Motor():
         odom.twist.twist.linear.x = self.vx
         odom.twist.twist.linear.y = 0.0
         odom.twist.twist.angular.z = self.vth
-
         self.pub_odom.publish(odom)
-        self.motorFunction()
-        if self.directive != 'X':            
-            self.speedCalibration()
 
-        self.last_time = self.cur_time
-
+        self.vx, self.vth = 0.0, 0.0
+        
     def forward(self):    
         self.ss.stop()
         self.sd.stop()
@@ -179,26 +175,22 @@ class Motor():
         self.fd.stop()
            
 
-    def CurrentPosition(self):
-        # step=False
-        # newValue = GPIO.input(40)
-        # if newValue!=self.oldValue :
-        #     step=True
-        # self.oldValue=newValue
+    def CurrentPosition(self):        
         if self.actual == True:             
             if self.directive=="W":
                 self.vx+= 0.005
             elif self.directive == "S":
                 self.vx-= 0.005
             elif self.directive == "D":
-                self.vth-=0.0357
+                self.vth-=0.0154
             elif self.directive == "A":
-                self.vth+=0.0412
+                self.vth+=0.0151
         self.actual = False   
     #43.5 si 38 cm au fost calculate apriori si reprezinta distanta citita
     #de encoder pentru o rotatie de 360 de grade pe roata din dreapta
 
-    def motorFunction(self):        
+    def motorFunction(self):
+        self.CurrentPosition() 
         if self.directive=="W":
             self.forward()
         elif self.directive == "S":
@@ -216,12 +208,14 @@ class Motor():
     def callback(self,msg):        
         self.directive=msg.data
         if self.directive =="W" or self.directive=="S":
-            self.vs=14
-	    self.vd=17
+            self.vs=16
+            self.vd=19
             self.limit =25
         elif self.directive =="A" or self.directive =="D":
-            self.vs=self.vd=12
-            self.limit =18
+            self.vs=18
+            self.vd=21
+            #se aplica o corectie initiala de 3 pentru motorul din dreapta care e mai rapid
+            self.limit=22
         self.nt=time.time()
         distD=distS=0
 
@@ -233,6 +227,12 @@ if __name__ == '__main__':
 
     rate = rospy.Rate(250)
     while not rospy.is_shutdown():
-        m.send_odom()
+        currentTime=time.time()
+        if currentTime-m.lastpost >0.1:
+            m.send_odom()
+            m.lastpost=currentTime
+        if m.directive != 'X':            
+            m.speedCalibration()
+        m.motorFunction()     
         rate.sleep()
     GPIO.cleanup()    
