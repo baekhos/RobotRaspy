@@ -137,9 +137,8 @@ class Motor():
         odom.twist.twist.linear.y = 0.0
         odom.twist.twist.angular.z = self.vth
         self.pub_odom.publish(odom)
-
         self.vx, self.vth = 0.0, 0.0
-        
+       
     def forward(self):    
         self.ss.stop()
         self.sd.stop()
@@ -189,8 +188,7 @@ class Motor():
     #43.5 si 38 cm au fost calculate apriori si reprezinta distanta citita
     #de encoder pentru o rotatie de 360 de grade pe roata din dreapta
 
-    def motorFunction(self):
-        self.CurrentPosition() 
+    def motorFunction(self):        
         if self.directive=="W":
             self.forward()
         elif self.directive == "S":
@@ -225,9 +223,10 @@ if __name__ == '__main__':
     rospy.init_node('Motor_Subscriber')
     m = Motor()
 
-    rate = rospy.Rate(250)
+    rate = rospy.Rate(300)
     while not rospy.is_shutdown():
         currentTime=time.time()
+        m.CurrentPosition()
         if currentTime-m.lastpost >0.1:
             m.send_odom()
             m.lastpost=currentTime
