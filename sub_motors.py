@@ -121,7 +121,7 @@ class Motor():
         self.x += self.vx * math.cos(self.th) #* dt
         self.y += self.vx * math.sin(self.th) #* dt
         self.th += self.vth #* dt 
-
+        print self.th
         q = tf.transformations.quaternion_from_euler(0, 0, self.th)
         self.bc_odom.sendTransform((self.x,self.y,0.0), q, self.cur_time,"base_link","odom")
 
@@ -181,9 +181,9 @@ class Motor():
             elif self.directive == "S":
                 self.vx-= 0.005
             elif self.directive == "D":
-                self.vth-=0.0154
+                self.vth-=0.038
             elif self.directive == "A":
-                self.vth+=0.0151
+                self.vth+=0.0354
         self.actual = False   
     #43.5 si 38 cm au fost calculate apriori si reprezinta distanta citita
     #de encoder pentru o rotatie de 360 de grade pe roata din dreapta
