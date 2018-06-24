@@ -28,18 +28,23 @@ class Motor():
     def __init__(self):        
         sub = rospy.Subscriber('direction', String, self.callback)
         
-       
+        self.d=0
         #setup pwm
         self.fs=GPIO.PWM(11,50) #fata stanga
         self.fd=GPIO.PWM(15,50) #fata dreapta-ok
         self.ss=GPIO.PWM(7,50) #spate stanga-ok
         self.sd=GPIO.PWM(13,50) #spate dreapta-ok
         #-----------------------------------
-        self.directive='X'
+        self.state=self.directive='X'
         #vom declara 2 viteze ale rotilor
         #Viteza rotii stangi si viteza rotii drepte 
         self.master=self.slave=0
-        self.kp=2.5#coeficient PID
+        self.kp=0.2
+	self.kd=0.1
+	self.rot=0.3925
+	self.trans=0.50
+	self.ticks=0
+	self.error=0
         #-------------------------------------------
         #de asemenea vom avea nevoie de numarul de rotatii pe fiecare roata
         #si de citirea anterioara a encoder ului pe fiecare roata
@@ -89,13 +94,17 @@ class Motor():
         self.distS+=self.distanceS()              
         t=time.time()
         dt=t-self.nt
-        if  dt>0.05:            
+        if  dt>0.03:            
             speedS=self.distS/dt
             speedD=self.distD/dt            
             print ("viteza pe roata dreapta este: %d iar pwm-ul e de %d iar pe roata stanga este: %d iar pwm-ul e de %d " % ( speedD,self.slave,speedS,self.master))
-            error=speedS-speedD
-            self.slave+=error/self.kp
-                         
+	    prev_error=self.error	
+            self.error=speedS-speedD
+            self.slave+=self.error*self.kp + prev_error*self.kd
+            if self.slave>100:
+		self.slave=99
+	    elif self.slave<1:
+		self.slave=1             
             self.distS=self.distD=0.0001	            
             self.nt=time.time()
 
@@ -134,15 +143,15 @@ class Motor():
         self.fs.stop()
         self.fd.stop()
         
-    def turnRight(self):        
-        self.sd.start(self.slave)
-        self.fs.start(self.master)        
+    def turnRight(self):       
+        self.sd.start(self.slave)        
+	self.fs.start(self.master)        
         self.fd.stop()
         self.ss.stop()
-        
+       
     def turnLeft(self):    
         self.ss.start(self.master)
-        self.fd.start(self.slave)
+	self.fd.start(self.slave)
         self.fs.stop()
         self.sd.stop()
         
@@ -150,19 +159,20 @@ class Motor():
         self.ss.stop()
         self.sd.stop()
         self.fs.stop()
-        self.fd.stop()
-           
+        self.fd.stop()	       
 
     def CurrentPosition(self):          
-        if self.directive=="W":            
-            self.vx+= 0.5
-        elif self.directive == "S":            
-            self.vx-= 0.5
-        elif self.directive == "D":
-            self.vth-=0.3926 
-        elif self.directive == "A":
-            self.vth+=0.3926
-        self.directive="X"        
+        if self.state=="W":            
+            self.vx+=self.trans
+        elif self.state == "S":            
+            self.vx-=self.trans
+        elif self.state == "D":
+            self.vth-=0.3925
+	    self.vx+=0.12	
+        elif self.state == "A":
+            self.vth+=0.3925
+	    self.vx+=0.12	
+        self.state=self.directive="X"        
         print("-----------------------------------------------------------------------------------------------------------------------")
         self.impD=self.impS=0
         self.stop()
@@ -170,25 +180,33 @@ class Motor():
     #de encoder pentru o rotatie de 360 de grade pe roata din dreapta
 
     def motorFunction(self):        
-        d=(self.impD+self.impS)/2
-        if self.directive=="W" and d<100:
+        self.d=(self.impD+self.impS)/2
+        if self.directive=="W" and self.d<self.ticks:
             self.forward()
-        elif self.directive == "S" and d<100:
+        elif self.directive == "S" and self.d<self.ticks:
             self.backwards()        
-        elif self.directive == "D"and d<10:
-            self.turnRight()
-        elif self.directive == "A"and d<10:
-            self.turnLeft()             
-        else:
-            self.CurrentPosition()
+        elif self.directive == "D" and self.d<self.ticks :
+            self.turnRight()	    			
+        elif self.directive == "A" and self.d<self.ticks:
+            self.turnLeft()		             
+        elif self.directive == "A" or self.directive == "D":
+	    self.stop()
+	    time.sleep(0.2)
+	    self.impD=self.impS=0
+	    self.ticks=24
+            self.directive="W"			
+        else:    
+	    self.CurrentPosition()
 
     def callback(self,msg):        
-        self.directive=msg.data
+        self.state=self.directive=msg.data
         if self.directive =="W" or self.directive=="S":
-            self.master=self.slave=22            
+            self.master=16
+            self.slave=16
+	    self.ticks=100
         elif self.directive =="A" or self.directive =="D":
-            self.master=self.slave=18
-            
+            self.master=self.slave=16
+            self.ticks=10
         self.nt=time.time()
         distD=distS=0
 
@@ -198,7 +216,7 @@ if __name__ == '__main__':
     rospy.init_node('Motor_Subscriber')
     m = Motor()
 
-    rate = rospy.Rate(400)
+    rate = rospy.Rate(500)
     while not rospy.is_shutdown():
         if m.directive == "Q":
             GPIO.cleanup()
@@ -208,7 +226,7 @@ if __name__ == '__main__':
             m.send_odom()
             m.lastpost=currentTime
         if m.directive !="X":            
-            m.motorFunction()
+            m.motorFunction()	
             m.speedCalibration()
         rate.sleep()
     GPIO.cleanup()    
